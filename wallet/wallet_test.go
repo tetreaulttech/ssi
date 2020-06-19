@@ -39,7 +39,7 @@ func TestSuite(t *testing.T) {
 
 	for _, db := range []TestStorage{
 		ims,
-		cdb,
+		//cdb,
 	} {
 
 		t.Run(db.Name, func(t *testing.T) {

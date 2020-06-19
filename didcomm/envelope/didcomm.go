@@ -5,7 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"github.com/tetreaulttech/wallet"
+	"github.com/tetreaulttech/ssi/wallet"
 	"golang.org/x/crypto/chacha20poly1305"
 	"golang.org/x/crypto/poly1305"
 	"io"
@@ -38,33 +38,51 @@ func Pack(handle wallet.Wallet, message []byte, receiverKeys []string, senderKey
 		return nil, err
 	}
 
-	// 2. encrypt the CEK for each recipient's public key using Authcrypt (steps below)
-	// 		i. set encrypted_key value to base64URLencode(libsodium.crypto_box(my_key, their_vk, cek, cek_iv))
-	//			Note it this step we're encrypting the cek, so it can be decrypted by the recipient
-	//		ii. set sender value to base64URLencode(libsodium.crypto_box_seal(their_vk, sender_vk_string))
-	//			Note in this step we're encrypting the sender_verkey to protect sender anonymity
-	//		iii. base64URLencode(cek_iv) and set to iv value in the header
-	//			Note the cek_iv in the header is used for the encrypted_key where as iv is for ciphertext
 	for i, receiverKey := range receiverKeys {
+		var encrypted, sender []byte
+		var nonce [24]byte
+		var err error
+		if senderKey != "" {
+			// 2. encrypt the CEK for each recipient's public key using Authcrypt (steps below)
+			// 		i. set encrypted_key value to base64URLencode(libsodium.crypto_box(my_key, their_vk, cek, cek_iv))
+			//			Note it this step we're encrypting the cek, so it can be decrypted by the recipient
+			//		ii. set sender value to base64URLencode(libsodium.crypto_box_seal(their_vk, sender_vk_string))
+			//			Note in this step we're encrypting the sender_verkey to protect sender anonymity
+			//		iii. base64URLencode(cek_iv) and set to iv value in the header
+			//			Note the cek_iv in the header is used for the encrypted_key where as iv is for ciphertext
 
-		encrypted, nonce, err := handle.Seal(contentEncryptionKey[:], receiverKey, senderKey)
-		if err != nil {
-			return nil, err
+			encrypted, nonce, err = handle.Seal(contentEncryptionKey[:], receiverKey, senderKey)
+			if err != nil {
+				return nil, err
+			}
+
+			sender, err = handle.SealAnonymous([]byte(senderKey), receiverKey)
+			if err != nil {
+				return nil, err
+			}
+
+			p.Recipients[i] = recipient{
+				EncryptedKey: base64.URLEncoding.EncodeToString(encrypted),
+				Header: header{
+					Kid:    receiverKey,
+					Iv:     base64.URLEncoding.EncodeToString(nonce[:]),
+					Sender: base64.URLEncoding.EncodeToString(sender),
+				},
+			}
+		} else {
+			// 2. encrypt the CEK for each recipient's public key using Anoncrypt
+			//    set encrypted_key value to base64URLencode(libsodium.crypto_box_seal(their_vk, cek))
+			//        Note it this step we're encrypting the cek, so it can be decrypted by the recipient
+			encrypted, err = handle.SealAnonymous(contentEncryptionKey[:], receiverKey)
+
+			p.Recipients[i] = recipient{
+				EncryptedKey: base64.URLEncoding.EncodeToString(encrypted),
+				Header: header{
+					Kid: receiverKey,
+				},
+			}
 		}
 
-		sender, err := handle.SealAnonymous([]byte(senderKey), receiverKey)
-		if err != nil {
-			return nil, err
-		}
-
-		p.Recipients[i] = recipient{
-			EncryptedKey: base64.URLEncoding.EncodeToString(encrypted),
-			Header: header{
-				Kid:    receiverKey,
-				Iv:     base64.URLEncoding.EncodeToString(nonce[:]),
-				Sender: base64.URLEncoding.EncodeToString(sender),
-			},
-		}
 	}
 
 	// 3. base64URLencode the protected value
@@ -150,7 +168,11 @@ func Unpack(handle wallet.Wallet, packed []byte) (msg []byte, err error) {
 					return nil, errors.New("unable to open content encryption key box")
 				}
 			} else {
-
+				var res bool
+				contentEncryptionKey, res = handle.OpenAnonymous(ekey, recipient.Header.Kid)
+				if !res {
+					return nil, errors.New("unable to open content encryption key box")
+				}
 			}
 		}
 
