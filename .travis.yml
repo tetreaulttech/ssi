@@ -1,0 +1,17 @@
+flanguage: go
+go:
+  - "1.13"
+
+services:
+  - docker
+
+before_install:
+  - docker pull couchdb
+  - docker run -d -p 127.0.0.1:5984:5984 couchdb
+  - docker ps -a
+  
+script:
+  - go test ./... -race -coverprofile=coverage.txt -covermode=atomic
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
