@@ -77,3 +77,7 @@ func TestPackAndUnpackAnonymous(t *testing.T) {
 
 	log.Println(string(msg))
 }
+
+func TestUnpackSignedUnencrypted(t *testing.T) {
+
+}

@@ -47,7 +47,7 @@ func Pack(handle wallet.Wallet, message []byte, receiverKeys []string, senderKey
 			// 		i. set encrypted_key value to base64URLencode(libsodium.crypto_box(my_key, their_vk, cek, cek_iv))
 			//			Note it this step we're encrypting the cek, so it can be decrypted by the recipient
 			//		ii. set sender value to base64URLencode(libsodium.crypto_box_seal(their_vk, sender_vk_string))
-			//			Note in this step we're encrypting the sender_verkey to protect sender anonymity
+			//			Note in this step we're encrypting the senderKey to protect sender anonymity
 			//		iii. base64URLencode(cek_iv) and set to iv value in the header
 			//			Note the cek_iv in the header is used for the encrypted_key where as iv is for ciphertext
 
@@ -147,6 +147,12 @@ func Unpack(handle wallet.Wallet, packed []byte) (msg []byte, err error) {
 				return nil, err
 			}
 
+			// 3. Check if a sender field is used.
+			//		If a sender is included use auth_decrypt to decrypt the encrypted_key by doing the following:
+			//			decrypt sender verkey using libsodium.crypto_box_seal_open(my_private_key, base64URLdecode(sender))
+			//			decrypt cek using libsodium.crypto_box_open(my_private_key, senderKey, encrypted_key, cek_iv)
+			//			decrypt ciphertext using libsodium.crypto_aead_chacha20poly1305_ietf_open_detached(base64URLdecode(ciphertext_bytes), base64URLdecode(protected_data_as_bytes), base64URLdecode(nonce), cek)
+			//			return message, recipientKey and senderKey following the authcrypt format
 			if recipient.Header.Sender != "" {
 				eSender, err := base64.URLEncoding.DecodeString(recipient.Header.Sender)
 				if err != nil {
@@ -168,6 +174,10 @@ func Unpack(handle wallet.Wallet, packed []byte) (msg []byte, err error) {
 					return nil, errors.New("unable to open content encryption key box")
 				}
 			} else {
+				//		If a sender is NOT included use anon_decrypt to decrypt the encrypted_key by doing the following:
+				//			decrypt encrypted_key using libsodium.crypto_box_seal_open(my_private_key, encrypted_key)
+				//			decrypt ciphertext using libsodium.crypto_aead_chacha20poly1305_ietf_open_detached(base64URLdecode(ciphertext_bytes), base64URLdecode(protected_data_as_bytes), base64URLdecode(nonce), cek)
+				//			return message and recipientKey following the anoncrypt format
 				var res bool
 				contentEncryptionKey, res = handle.OpenAnonymous(ekey, recipient.Header.Kid)
 				if !res {
@@ -180,17 +190,6 @@ func Unpack(handle wallet.Wallet, packed []byte) (msg []byte, err error) {
 			return nil, errors.New("no matching keys")
 		}
 	}
-
-	// 3. Check if a sender field is used.
-	//		If a sender is included use auth_decrypt to decrypt the encrypted_key by doing the following:
-	//			decrypt sender verkey using libsodium.crypto_box_seal_open(my_private_key, base64URLdecode(sender))
-	//			decrypt cek using libsodium.crypto_box_open(my_private_key, sender_verkey, encrypted_key, cek_iv)
-	//			decrypt ciphertext using libsodium.crypto_aead_chacha20poly1305_ietf_open_detached(base64URLdecode(ciphertext_bytes), base64URLdecode(protected_data_as_bytes), base64URLdecode(nonce), cek)
-	//			return message, recipient_verkey and sender_verkey following the authcrypt format listed below
-	//		If a sender is NOT included use anon_decrypt to decrypt the encrypted_key by doing the following:
-	//			decrypt encrypted_key using libsodium.crypto_box_seal_open(my_private_key, encrypted_key)
-	//			decrypt ciphertext using libsodium.crypto_aead_chacha20poly1305_ietf_open_detached(base64URLdecode(ciphertext_bytes), base64URLdecode(protected_data_as_bytes), base64URLdecode(nonce), cek)
-	//			return message and recipient_verkey following the anoncrypt format listed below`
 
 	var iv []byte
 	if iv, err = base64.URLEncoding.DecodeString(e.Iv); err != nil {
