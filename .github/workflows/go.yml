@@ -28,8 +28,8 @@ jobs:
     
     # Fail if go fmt has not been run on any files.
     - name: fmt
-      run:  test -z $(gofmt -s .)
-    
+      run: test -z $(gofmt -l -w -s .)
+
     - name: vet
       run: go vet ./...
 
