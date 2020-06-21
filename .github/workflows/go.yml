@@ -30,7 +30,7 @@ jobs:
 #       run: go build -v .
 
     - name: Test
-      run: go test -v ./... -cover
+      run: go test -v ./... -coverprofile=coverage.txt -covermode=atomic
     
     - name: Publish Test Results
       uses: codecov/codecov-action@v1
