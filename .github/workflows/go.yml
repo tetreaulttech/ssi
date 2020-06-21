@@ -28,7 +28,7 @@ jobs:
     
     # Fail if go fmt has not been run on any files.
     - name: fmt
-      run:  test -z $(go fmt ./...) 
+      run:  test -z $(gofmt -s .)
     
     - name: vet
       run: go vet ./...
@@ -36,5 +36,5 @@ jobs:
     - name: test
       run: go test -race -coverprofile=coverage.txt -covermode=atomic ./...
     
-    - name: Publish Test Results
+    - name: publish
       uses: codecov/codecov-action@v1
