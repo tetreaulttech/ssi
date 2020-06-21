@@ -11,7 +11,9 @@ import (
 	"io"
 )
 
-// Wrap a plaintext message in an encrypted envelope
+// Pack
+//
+//Wrap a plaintext message in an encrypted envelope
 //
 // handle: handle to the wallet that contains the sender's secrets.
 //
@@ -118,6 +120,8 @@ func Pack(handle wallet.Wallet, message []byte, receiverKeys []string, senderKey
 	return json.Marshal(packed)
 }
 
+// Unpack
+//
 // Unwrap encrypted envelopes in to the plaintext messages
 //
 // handle: wallet handle that contains the sender key
@@ -217,12 +221,13 @@ func Unpack(handle wallet.Wallet, packed []byte) (msg []byte, err error) {
 }
 
 func decodeAndUnmarshal(src string, dst interface{}) error {
-	if d, err := base64.URLEncoding.DecodeString(src); err != nil {
+	var d []byte
+	var err error
+	if d, err = base64.URLEncoding.DecodeString(src); err != nil {
 		return err
-	} else {
-		if err := json.Unmarshal(d, dst); err != nil {
-			return err
-		}
+	}
+	if err := json.Unmarshal(d, dst); err != nil {
+		return err
 	}
 	return nil
 }
