@@ -23,7 +23,7 @@ var validResponse = did.Document{
 		{Id: fmt.Sprintf("%s#owner", validDid), Type: "Secp256k1VerificationKey2018", Owner: validDid, EthereumAddress: identity},
 	},
 	Authentication: []did.Authentication{
-		{Type: "Secp256k1SignatureAuthentication2018", PublicKey: fmt.Sprintf("%s#owner", validDid),},
+		{Type: "Secp256k1SignatureAuthentication2018", PublicKey: fmt.Sprintf("%s#owner", validDid)},
 	},
 	Service: nil,
 	Created: "",
@@ -37,7 +37,7 @@ var validResponseLong = did.Document{
 		{Id: fmt.Sprintf("%s#owner", validDid), Type: "Secp256k1VerificationKey2018", Owner: validDid, EthereumAddress: identity},
 	},
 	Authentication: []did.Authentication{
-		{Type: "Secp256k1SignatureAuthentication2018", PublicKey: fmt.Sprintf("%s#owner", longDid),},
+		{Type: "Secp256k1SignatureAuthentication2018", PublicKey: fmt.Sprintf("%s#owner", longDid)},
 	},
 	Service: nil,
 	Created: "",

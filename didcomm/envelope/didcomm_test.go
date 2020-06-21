@@ -1,6 +1,9 @@
 package envelope
 
 import (
+	"encoding/base64"
+	"encoding/json"
+	"github.com/stretchr/testify/assert"
 	"github.com/tetreaulttech/ssi/wallet"
 	"log"
 	"testing"
@@ -66,6 +69,13 @@ func TestPackAndUnpackAnonymous(t *testing.T) {
 		t.Error(err.Error())
 		return
 	}
+
+	e := new(envelope)
+	_ = json.Unmarshal(packed, e)
+	pEnc, _ := base64.URLEncoding.DecodeString(e.Protected)
+	p := new(protected)
+	_ = json.Unmarshal(pEnc, p)
+	assert.Equal(t, anoncrypt, p.Alg)
 
 	log.Println(string(packed))
 

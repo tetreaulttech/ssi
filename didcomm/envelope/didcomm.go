@@ -28,7 +28,6 @@ func Pack(handle wallet.Wallet, message []byte, receiverKeys []string, senderKey
 	p := protected{
 		Enc:        xchacha20poly1305_ietf,
 		Typ:        "JWM/1.0",
-		Alg:        authcrypt,
 		Recipients: make([]recipient, len(receiverKeys)),
 	}
 
@@ -50,6 +49,7 @@ func Pack(handle wallet.Wallet, message []byte, receiverKeys []string, senderKey
 			//			Note in this step we're encrypting the senderKey to protect sender anonymity
 			//		iii. base64URLencode(cek_iv) and set to iv value in the header
 			//			Note the cek_iv in the header is used for the encrypted_key where as iv is for ciphertext
+			p.Alg = authcrypt
 
 			encrypted, nonce, err = handle.Seal(contentEncryptionKey[:], receiverKey, senderKey)
 			if err != nil {
@@ -73,6 +73,8 @@ func Pack(handle wallet.Wallet, message []byte, receiverKeys []string, senderKey
 			// 2. encrypt the CEK for each recipient's public key using Anoncrypt
 			//    set encrypted_key value to base64URLencode(libsodium.crypto_box_seal(their_vk, cek))
 			//        Note it this step we're encrypting the cek, so it can be decrypted by the recipient
+			p.Alg = anoncrypt
+
 			encrypted, err = handle.SealAnonymous(contentEncryptionKey[:], receiverKey)
 
 			p.Recipients[i] = recipient{
