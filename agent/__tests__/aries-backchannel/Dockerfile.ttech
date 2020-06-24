@@ -1,0 +1,21 @@
+# The base go-image
+# FROM golang:1.13-alpine AS agent
+# RUN apk --update add git
+# RUN mkdir /agent
+# WORKDIR /agent
+# #RUN git clone https://github.com/tetreaulttech/ssi.git .
+# COPY ssi .
+# RUN go build -o server /agent/agent/
+
+# The base go-image
+FROM golang:1.13-alpine
+
+RUN mkdir /app
+WORKDIR /app
+
+COPY . /app
+RUN go get ./...
+RUN go build -o backchannel .
+
+# Run the server executable
+ENTRYPOINT [ "/app/entrypoint.sh" ]

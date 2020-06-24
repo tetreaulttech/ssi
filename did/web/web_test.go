@@ -20,10 +20,10 @@ var validResponse = did.Document{
 	Context: "https://w3id.org/did/v1",
 	Id:      validDid,
 	PublicKey: []did.PublicKey{
-		{Id: fmt.Sprintf("%s#owner", validDid), Type: "Secp256k1VerificationKey2018", Owner: validDid, EthereumAddress: identity},
+		{Id: fmt.Sprintf("%s#owner", validDid), Type: "Secp256k1VerificationKey2018", Controller: validDid, EthereumAddress: identity},
 	},
-	Authentication: []did.Authentication{
-		{Type: "Secp256k1SignatureAuthentication2018", PublicKey: fmt.Sprintf("%s#owner", validDid)},
+	Authentication: []interface{}{
+		did.Authentication{Type: "Secp256k1SignatureAuthentication2018", PublicKey: fmt.Sprintf("%s#owner", validDid)},
 	},
 	Service: nil,
 	Created: "",
@@ -34,10 +34,10 @@ var validResponseLong = did.Document{
 	Context: "https://w3id.org/did/v1",
 	Id:      longDid,
 	PublicKey: []did.PublicKey{
-		{Id: fmt.Sprintf("%s#owner", validDid), Type: "Secp256k1VerificationKey2018", Owner: validDid, EthereumAddress: identity},
+		{Id: fmt.Sprintf("%s#owner", validDid), Type: "Secp256k1VerificationKey2018", Controller: validDid, EthereumAddress: identity},
 	},
-	Authentication: []did.Authentication{
-		{Type: "Secp256k1SignatureAuthentication2018", PublicKey: fmt.Sprintf("%s#owner", longDid)},
+	Authentication: []interface{}{
+		did.Authentication{Type: "Secp256k1SignatureAuthentication2018", PublicKey: fmt.Sprintf("%s#owner", longDid)},
 	},
 	Service: nil,
 	Created: "",
@@ -106,13 +106,3 @@ func TestResolver(t *testing.T) {
 	}
 
 }
-
-//it(\"fails if the did document has no public keys\", () => {
-//mockedFetch.mockResolvedValueOnce({
-//json: () => noPublicKeyResponse
-//})
-//return expect(didResolver.resolve(did)).rejects.toThrowError(
-//\"DID document has no public keys\"
-//)
-//})
-//})

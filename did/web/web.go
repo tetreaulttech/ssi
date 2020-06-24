@@ -3,6 +3,7 @@ package web
 import (
 	"errors"
 	"github.com/go-resty/resty/v2"
+	"github.com/mitchellh/mapstructure"
 	"github.com/tetreaulttech/ssi/did"
 	"net/http"
 	"net/url"
@@ -63,5 +64,14 @@ func (d *resolver) Resolve(id string) (*did.Document, error) {
 			return nil, errors.New("DID document has no public keys")
 		}
 	}
+
+	for i, a := range ddoc.Authentication {
+		if m, ok := a.(map[string]interface{}); ok {
+			auth := did.Authentication{}
+			mapstructure.Decode(m, &auth)
+			ddoc.Authentication[i] = auth
+		}
+	}
+
 	return &ddoc, nil
 }
